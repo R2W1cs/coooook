@@ -364,8 +364,8 @@ const catLabels = { protein: 'Proteins', veg: 'Vegetables', dairy: 'Dairy', frui
 // ────────────────────────────────────────────────
 let currentUser   = null;
 let fridge        = [];
-let savedRecipes  = [];
-let mealPlan      = {};
+let savedRecipes  = JSON.parse(localStorage.getItem('cooks_saved_recipes') || '[]');
+let mealPlan      = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
 let customRecipes = []; // Local ones if any, otherwise from DB
 let communityPosts= [];
 let challenges    = [];
@@ -460,6 +460,8 @@ function bootApp(user) {
     document.cookie = "is_guest=true; path=/";
   }
 
+  const savedCountEl = document.getElementById('homesSavedCount');
+  if (savedCountEl) savedCountEl.textContent = savedRecipes.length;
   loadAndRender();
   navigateTo('home');
   history.replaceState({ page: 'home' }, '', '#home');
@@ -665,7 +667,28 @@ function handleSignup(e) {
   const user = { name, email, password, joined: new Date().toLocaleDateString() };
   localStorage.setItem('cooks_user', JSON.stringify(user));
   localStorage.setItem('cooks_logged_in', 'true');
+  localStorage.removeItem('quiz_streak');
+  localStorage.removeItem('quiz_last_played');
+  localStorage.removeItem('challenge_played_date');
+  localStorage.removeItem('challenge_played_card');
+  localStorage.removeItem('challenge_last_result');
+  localStorage.removeItem('streak_last_date');
+  localStorage.removeItem('streak_last_updated');
+  localStorage.removeItem('heatmap_days');
+  localStorage.removeItem('missing_last_played');
+  localStorage.removeItem('trivia_last_played');
+  localStorage.removeItem('community_user_posts');
+  localStorage.removeItem('user_avatar');
+  for (let i = 0; i < 10; i++) {
+    localStorage.removeItem('post_likes_' + i);
+    localStorage.removeItem('post_reactions_' + i);
+  }
   bootApp(user);
+  // Overwrite any stale pre-login renders immediately so the user
+  // never sees old streak/challenge data if they navigate before
+  // loadAndRender()'s async chain completes.
+  renderProfile();
+  renderCommunity();
   showToast(`Welcome to Cook's, ${name}! 🍳`);
 }
 
@@ -922,7 +945,10 @@ function toggleQuickSave(id, btn) {
     btn.classList.add('saved');
     btn.innerHTML = '<i class="fa-solid fa-bookmark"></i>';
   }
-  localStorage.setItem('cooks_saved', JSON.stringify(savedRecipes));
+  localStorage.setItem('cooks_saved_recipes', JSON.stringify(savedRecipes));
+  const countEl = document.getElementById('homesSavedCount');
+  if (countEl) countEl.textContent = savedRecipes.length;
+  if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
   renderSaved();
   renderHome();
 }
@@ -948,6 +974,7 @@ function openRecipeModal(id) {
   sb.innerHTML = `<i class="fa-${isSaved?'solid':'regular'} fa-bookmark"></i> ${isSaved ? 'Saved!' : 'Save to Collection'}`;
   sb.className = `save-toggle-btn ${isSaved ? 'saved' : ''}`;
 
+  document.getElementById('mPlanDate').min = new Date().toISOString().split('T')[0];
   renderModalIngredients();
   document.getElementById('recipeModal').classList.add('open');
 }
@@ -978,31 +1005,30 @@ function toggleSaveRecipe() {
   const isSaved = savedRecipes.includes(id);
   if (isSaved) savedRecipes = savedRecipes.filter(x => x !== id);
   else savedRecipes.push(id);
-  localStorage.setItem('cooks_saved', JSON.stringify(savedRecipes));
+  localStorage.setItem('cooks_saved_recipes', JSON.stringify(savedRecipes));
   renderModalIngredients(); // refresh
   const sb = document.getElementById('mSaveBtn');
   const nowSaved = savedRecipes.includes(id);
-  sb.innerHTML = `<i class="fa-${nowSaved?'solid':'regular'} fa-bookmark"></i> ${nowSaved ? 'Saved!' : 'Save to Collection'}`;
+  sb.innerHTML = nowSaved ? '✅ Saved to Collection' : '🔖 Save to Collection';
   sb.className = `save-toggle-btn ${nowSaved ? 'saved' : ''}`;
+  const countEl = document.getElementById('homesSavedCount');
+  if (countEl) countEl.textContent = savedRecipes.length;
+  if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
   renderSaved(); renderHome();
   showToast(nowSaved ? 'Saved to Collection 📚' : 'Removed from Collection');
 }
 
-async function scheduleRecipe() {
+function scheduleRecipe() {
   const date = document.getElementById('mPlanDate').value;
-  if (!date || !activeRecipe) return showToast('Please pick a date first!');
-  
-  try {
-    await apiRequest('planner.php?action=save', {
-      method: 'POST',
-      body: JSON.stringify({ date, recipe_id: activeRecipe.id })
-    });
-    mealPlan[date] = activeRecipe.id;
-    renderPlanner(); 
-    renderHome();
-    renderFridgeDoorScreen();
-    showToast('Recipe scheduled! 📅');
-  } catch (err) {}
+  if (!date) return showToast('Please select a date first!');
+  if (!activeRecipe) return;
+  mealPlan = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
+  mealPlan[date] = activeRecipe.id;
+  localStorage.setItem('cooks_meal_plan', JSON.stringify(mealPlan));
+  closeModal('recipeModal');
+  showToast('Recipe scheduled! 📅');
+  renderPlanner();
+  renderHome();
 }
 
 // ────────────────────────────────────────────────
@@ -1048,6 +1074,7 @@ function renderTimer() {
 // PLANNER
 // ────────────────────────────────────────────────
 function renderPlanner() {
+  mealPlan = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
   const cal = document.getElementById('plannerWeek');
   cal.innerHTML = '';
   const today = new Date();
@@ -1067,18 +1094,14 @@ function renderPlanner() {
   }
 }
 
-async function unplanDay(date) {
-  try {
-    await apiRequest('planner.php?action=remove', {
-      method: 'POST',
-      body: JSON.stringify({ date })
-    });
-    delete mealPlan[date];
-    renderPlanner(); 
-    renderHome();
-    renderFridgeDoorScreen();
-    showToast('Plan removed.');
-  } catch (err) {}
+function unplanDay(date) {
+  mealPlan = JSON.parse(localStorage.getItem('cooks_meal_plan') || '{}');
+  delete mealPlan[date];
+  localStorage.setItem('cooks_meal_plan', JSON.stringify(mealPlan));
+  renderPlanner();
+  renderHome();
+  renderFridgeDoorScreen();
+  showToast('Plan removed.');
 }
 
 // ────────────────────────────────────────────────
@@ -1123,9 +1146,14 @@ function createPost() {
     ...(imgData ? { image: imgData } : {}),
   };
 
-  const userPosts = JSON.parse(localStorage.getItem('community_user_posts') || '[]');
-  userPosts.unshift(newPost);
+  let userPosts = JSON.parse(localStorage.getItem('community_user_posts') || '[]');
+  userPosts.push(newPost);
   localStorage.setItem('community_user_posts', JSON.stringify(userPosts));
+
+  const userPostsCount = JSON.parse(localStorage.getItem('community_user_posts') || '[]').length;
+  if (document.getElementById('page-profile').classList.contains('active')) {
+    renderProfile();
+  }
 
   textarea.value = '';
   window._pendingPostImage = null;
@@ -1575,7 +1603,7 @@ function renderProfile() {
 
   // ── Stats ──
   const challengesDone = heatmapDays.length;
-  const postsMade      = userPosts.length;
+  const postsMade      = JSON.parse(localStorage.getItem('community_user_posts') || '[]').length;
 
   // ── Saved Recipes ──
   const savedGrid = getAllRecipes().filter(r => savedRecipes.includes(r.id)).map(r =>
