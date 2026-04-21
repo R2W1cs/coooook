@@ -467,58 +467,164 @@
   <!-- ═══════════════════════════════════════════════
      PAGE: COMMUNITY
 ════════════════════════════════════════════════ -->
+  <style>
+    /* ── Reaction bar ── */
+    .rxn-bar{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+    .rxn-btn{background:none;border:1px solid var(--border,#e2e8f0);border-radius:20px;padding:4px 11px;cursor:pointer;font-size:0.88rem;display:inline-flex;align-items:center;gap:5px;transition:background .18s,transform .12s;position:relative;}
+    .rxn-btn:hover{background:var(--surface2,#f1f5f9);transform:scale(1.08);}
+    .rxn-btn span{font-size:0.78rem;color:var(--muted,#94a3b8);font-weight:700;min-width:8px;}
+    .rxn-locked{opacity:.55;}
+    .lock-tooltip{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#1e293b;color:#f8fafc;font-size:0.72rem;padding:5px 11px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:200;box-shadow:0 3px 10px rgba(0,0,0,.25);animation:fadeInTip .15s ease;}
+    @keyframes fadeInTip{from{opacity:0;transform:translateX(-50%) translateY(4px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    /* ── Guess the Dish quiz ── */
+    .quiz-card{max-width:520px;margin:32px auto;background:var(--surface,#fff);border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,.08);overflow:hidden;padding:0 0 28px;}
+    .quiz-header{padding:28px 28px 0;text-align:center;}
+    .quiz-header h2{font-size:1.4rem;margin:0 0 6px;}
+    .quiz-sub{color:var(--muted,#94a3b8);font-size:0.85rem;margin:0 0 14px;}
+    .quiz-streak-badge{display:inline-flex;align-items:center;gap:6px;background:var(--surface2,#f1f5f9);border-radius:20px;padding:5px 14px;font-size:0.88rem;font-weight:700;margin-bottom:20px;}
+    .quiz-img-wrap{position:relative;width:100%;height:240px;overflow:hidden;}
+    .quiz-img{width:100%;height:100%;object-fit:cover;transition:filter .6s ease;}
+    .quiz-blurred{filter:blur(6px);transform:scale(1.04);}
+    .quiz-img-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18);}
+    .quiz-img-overlay span{background:rgba(0,0,0,.55);color:#fff;font-size:0.9rem;font-weight:700;padding:7px 18px;border-radius:20px;letter-spacing:.02em;}
+    .quiz-answers{display:flex;flex-direction:column;gap:10px;padding:22px 28px 0;}
+    .quiz-ans-btn{width:100%;padding:13px 18px;border:2px solid var(--border,#e2e8f0);border-radius:12px;background:var(--surface,#fff);font-size:0.95rem;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,transform .1s;text-align:left;}
+    .quiz-ans-btn:not(:disabled):hover{background:var(--surface2,#f1f5f9);border-color:var(--gold,#d4a017);transform:translateX(3px);}
+    .quiz-ans-btn:disabled{cursor:default;opacity:.7;}
+    .quiz-ans-correct{border-color:#22c55e!important;background:#f0fdf4!important;color:#15803d!important;}
+    .quiz-ans-wrong{border-color:#ef4444!important;background:#fef2f2!important;color:#b91c1c!important;}
+    .quiz-feedback{padding:18px 28px 0;font-size:1rem;font-weight:700;text-align:center;display:none;}
+    .quiz-feedback.visible{display:block;}
+    .quiz-correct{color:#16a34a;}
+    .quiz-wrong{color:#dc2626;}
+    .quiz-next{text-align:center;font-size:0.8rem;color:var(--muted,#94a3b8);margin:10px 28px 0;padding-top:4px;}
+    /* ── Streak dashboard ── */
+    .streak-dashboard{max-width:520px;margin:32px auto 0;background:linear-gradient(135deg,#ff6b35,#f59e0b);border-radius:20px;padding:22px 28px;display:flex;align-items:center;gap:14px;color:#fff;box-shadow:0 4px 20px rgba(245,158,11,.3);}
+    .streak-flame{font-size:2.2rem;line-height:1;}
+    .streak-number{font-size:2.8rem;font-weight:900;line-height:1;}
+    .streak-label{font-size:1rem;font-weight:600;opacity:.9;}
+    /* ── Unlocked reactions section ── */
+    .unlock-section{max-width:520px;margin:14px auto 0;background:var(--surface,#fff);border-radius:20px;padding:20px 24px;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+    .unlock-title{font-size:0.82rem;font-weight:700;color:var(--muted,#94a3b8);text-transform:uppercase;letter-spacing:.06em;margin:0 0 14px;}
+    .unlock-grid{display:flex;gap:12px;flex-wrap:wrap;}
+    .unlock-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 16px;border-radius:14px;border:2px solid var(--border,#e2e8f0);min-width:78px;opacity:.45;transition:opacity .3s,border-color .3s,background .3s;}
+    .unlock-item.u-on{opacity:1;border-color:#22c55e;background:#f0fdf4;}
+    .unlock-emoji{font-size:1.8rem;line-height:1;}
+    .unlock-req{font-size:0.7rem;font-weight:700;color:var(--muted,#94a3b8);text-align:center;}
+    .unlock-item.u-on .unlock-req{color:#16a34a;}
+    /* ── Earned (unlocked) reaction button ── */
+    .rxn-unlocked{border-color:var(--gold,#d4a017)!important;}
+    .rxn-unlocked:hover{background:rgba(212,160,23,.1)!important;}
+    /* ── Demo post cards ── */
+    #page-community .comm-post-card{padding:0;overflow:hidden;}
+    .post-img{width:100%;height:200px;object-fit:cover;display:block;}
+    .post-body{padding:16px 18px 14px;}
+    .post-header{display:flex;align-items:center;gap:11px;margin-bottom:10px;}
+    .post-username{font-size:0.9rem;font-weight:700;display:block;}
+    .post-dish{font-size:0.75rem;color:var(--gold,#d4a017);font-weight:600;}
+    .post-time{margin-left:auto;font-size:0.73rem;color:var(--muted,#94a3b8);white-space:nowrap;}
+    .post-likes{font-size:0.78rem;color:var(--muted,#94a3b8);margin-bottom:8px;}
+    .post-caption{font-size:0.9rem;line-height:1.65;margin:0 0 12px;color:var(--text,#1e293b);}
+    .lock-msg{font-size:0.76rem;color:var(--gold,#c08a00);font-weight:600;min-height:0;max-height:0;overflow:hidden;transition:max-height .2s;margin-top:0;}
+    .lock-msg.visible{max-height:22px;margin-top:6px;}
+    /* ── Active (clicked) reaction ── */
+    .rxn-active{background:var(--surface2,#f1f5f9)!important;border-color:var(--gold,#d4a017)!important;}
+    .rxn-active span{color:var(--text,#1e293b)!important;}
+    /* ── Challenge result banner ── */
+    .result-banner{margin:18px 28px 0;padding:13px 18px;border-radius:12px;font-size:0.9rem;font-weight:700;line-height:1.5;text-align:center;}
+    .rb-correct{background:#f0fdf4;color:#15803d;border:2px solid #22c55e;}
+    .rb-wrong{background:#fef2f2;color:#b91c1c;border:2px solid #ef4444;}
+    .rb-played{background:#fff7ed;color:#92400e;border:2px solid #f59e0b;}
+    /* ── Per-card info line ── */
+    .chall-info{text-align:center;font-size:0.75rem;color:var(--muted,#94a3b8);margin:10px 28px 0;padding-bottom:4px;}
+    /* ── Missing Ingredient card ── */
+    .ing-pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+    .ing-pill{padding:6px 14px;border-radius:20px;background:var(--surface2,#f1f5f9);font-size:0.85rem;font-weight:600;border:2px solid transparent;}
+    .ing-missing{background:rgba(245,158,11,.15);border-color:var(--gold,#d4a017);color:var(--gold,#c08a00);font-size:1rem;}
+    /* ── True / False card ── */
+    .trivia-fact{font-size:1rem;font-weight:600;line-height:1.6;color:var(--text,#1e293b);margin:0;padding:4px 0 8px;}
+    .tf-row{flex-direction:row!important;gap:12px!important;}
+    .tf-btn{flex:1;text-align:center!important;}
+  </style>
   <div class="page" id="page-community">
     <div class="page-hero">
       <div class="container">
         <h1><i class="fa-solid fa-users"></i> <span data-i18n="comm_title">Community</span></h1>
       </div>
     </div>
-    <div class="container comm-layout">
-      <div class="comm-main">
-        <!-- Post Box -->
-        <div class="post-box">
-          <div class="post-box-top">
-            <div class="up-avatar sm">👨‍🍳</div>
-            <textarea id="postText" placeholder="Share a recipe, ask a question, or post your creation..."></textarea>
-          </div>
-          <div class="post-box-btns">
-            <button class="comm-media-btn" onclick="showToast('Photo upload coming soon!')"><i
-                class="fa-solid fa-image"></i> Photo</button>
-            <button class="btn-primary sm" onclick="createPost()">Post</button>
-          </div>
-        </div>
-        <!-- Feed -->
-        <div id="commFeed"></div>
+    <!-- Community Tabs -->
+    <div class="container" style="margin-top:24px;margin-bottom:0;">
+      <div class="auth-tabs" style="max-width:300px;">
+        <button class="atab active" id="commTabFeed" onclick="switchCommTab('feed')" data-i18n="comm_feed">Feed</button>
+        <button class="atab" id="commTabChallenges" onclick="switchCommTab('challenges')" data-i18n="comm_challenges">Challenges</button>
       </div>
-      <!-- Challenges Sidebar -->
-      <div class="comm-sidebar">
-        <div class="card-block">
-          <h3>🔥 Active Challenges</h3>
-          <div class="challenge-card-sm">
-            <div class="challenge-emoji">🥙</div>
-            <div>
-              <strong>Perfect Hummus</strong>
-              <p>432 participants</p>
+    </div>
+    <!-- Feed Panel -->
+    <div id="commPanelFeed">
+      <div class="container comm-layout">
+        <div class="comm-main">
+          <!-- Post Box -->
+          <div class="post-box">
+            <input type="file" id="photoFileInput" accept="image/jpeg,image/png" style="display:none;" onchange="handlePhotoSelect(this)">
+            <div id="postImgPreview" style="display:none;padding:8px 0 4px;"></div>
+            <div class="post-box-top">
+              <div class="up-avatar sm">👨‍🍳</div>
+              <textarea id="postText" placeholder="Share a recipe, ask a question, or post your creation..."></textarea>
             </div>
-            <button class="btn-sm-gold">Join</button>
+            <div class="post-box-btns">
+              <button class="comm-media-btn" onclick="triggerPhotoUpload()"><i
+                  class="fa-solid fa-image"></i> <span data-i18n="comm_photo">Photo</span></button>
+              <button class="btn-primary sm" onclick="createPost()" data-i18n="comm_post">Post</button>
+            </div>
+            <div id="postStatusMsg" style="display:none;font-size:0.85rem;padding:4px 0 2px;"></div>
           </div>
-          <div class="challenge-card-sm">
-            <div class="challenge-emoji">🍋</div>
-            <div>
-              <strong>Lemony Tagine Challenge</strong>
-              <p>217 participants</p>
-            </div>
-            <button class="btn-sm-gold">Join</button>
+          <!-- Feed -->
+          <div id="commFeed"></div>
+        </div>
+        <!-- Challenges Sidebar -->
+        <div class="comm-sidebar">
+          <div class="card-block">
+            <h3>🔥 Today's Challenges</h3>
+            <button class="challenge-card-sm" onclick="switchCommTab('challenges')" style="cursor:pointer;width:100%;text-align:left;background:none;border:none;padding:0;">
+              <div class="challenge-emoji">🖼️</div>
+              <div>
+                <strong data-i18n="comm_guess_dish">Guess the Dish 🖼️</strong>
+                <p>Identify the mystery Arabic dish</p>
+              </div>
+            </button>
+            <button class="challenge-card-sm" onclick="switchCommTab('challenges')" style="cursor:pointer;width:100%;text-align:left;background:none;border:none;padding:0;">
+              <div class="challenge-emoji">❓</div>
+              <div>
+                <strong data-i18n="comm_missing_ing">Missing Ingredient ❓</strong>
+                <p>Name the hidden ingredient</p>
+              </div>
+            </button>
+            <button class="challenge-card-sm" onclick="switchCommTab('challenges')" style="cursor:pointer;width:100%;text-align:left;background:none;border:none;padding:0;">
+              <div class="challenge-emoji">💡</div>
+              <div>
+                <strong data-i18n="comm_true_false">True or False 💡</strong>
+                <p>Test your cooking knowledge</p>
+              </div>
+            </button>
+          </div>
+          <div class="card-block">
+            <h3>🏅 Leaderboard</h3>
+            <ol class="leaderboard">
+              <li><span>ChefAmine</span><span>2840 pts</span></li>
+              <li><span>KitchenQueen</span><span>2410 pts</span></li>
+              <li><span>SpiceGuru</span><span>1980 pts</span></li>
+            </ol>
           </div>
         </div>
-        <div class="card-block">
-          <h3>🏅 Leaderboard</h3>
-          <ol class="leaderboard">
-            <li><span>ChefAmine</span><span>2840 pts</span></li>
-            <li><span>KitchenQueen</span><span>2410 pts</span></li>
-            <li><span>SpiceGuru</span><span>1980 pts</span></li>
-          </ol>
+      </div>
+    </div>
+    <!-- Challenges Panel -->
+    <div id="commPanelChallenges" style="display:none;">
+      <div class="container comm-layout">
+        <div class="comm-main">
+          <div id="comm-challenges"></div>
         </div>
+        <div class="comm-sidebar" id="commChallengesSidebar"></div>
       </div>
     </div>
   </div>
