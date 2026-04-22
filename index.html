@@ -90,16 +90,6 @@
           <button type="submit" class="btn-primary full">Create My Account</button>
         </form>
 
-        <div class="auth-divider"><span>or continue with</span></div>
-        <button class="google-btn" onclick="mockGoogleLogin()">
-          <svg width="20" height="20" viewBox="0 0 48 48">
-            <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.9 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.6 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11.1 0 20-8.9 20-20 0-1.3-.1-2.7-.4-3.9z" />
-            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16.1 19 13 24 13c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.6 29.5 4 24 4 16.3 4 9.7 8.4 6.3 14.7z" />
-            <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.4 26.8 36 24 36c-5.2 0-9.7-3.1-11.3-7.5L6 33.8C9.3 39.7 16.2 44 24 44z" />
-            <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.3-2.4 4.3-4.4 5.6l6.2 5.2C37 39 44 34 44 24c0-1.3-.1-2.7-.4-3.9z" />
-          </svg>
-          Continue with Google
-        </button>
         <button class="btn-text-gold full" style="margin-top:20px; font-weight:800;" onclick="browseAsGuest()">
           Browse as Guest <i class="fa-solid fa-arrow-right"></i>
         </button>
@@ -136,8 +126,21 @@
           <button class="lbtn" data-lang="fr">FR</button>
           <button class="lbtn" data-lang="ar">ع</button>
         </div>
+        <div style="position:relative;">
+          <button class="icon-btn" id="notifBtn" title="Notifications" onclick="toggleNotifPanel()">
+            <i class="fa-solid fa-bell"></i>
+            <span id="notifBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#dc2626; color:#fff; border-radius:50%; width:18px; height:18px; font-size:0.65rem; font-weight:700; align-items:center; justify-content:center;"></span>
+          </button>
+          <div id="notifPanel" style="display:none; position:absolute; top:calc(100% + 10px); right:0; width:320px; background:var(--surface,#fff); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,.15); border:1px solid var(--border); z-index:1000; padding:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <h3 style="font-size:0.95rem; font-weight:700; margin:0;">Notifications</h3>
+              <button onclick="markAllNotifsRead()" style="background:none; border:none; color:var(--gold,#d4a017); font-size:0.78rem; font-weight:700; cursor:pointer;">Mark all read</button>
+            </div>
+            <div id="notifList"></div>
+          </div>
+        </div>
         <button class="icon-btn" id="themeBtn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
-        <div class="user-pill" onclick="navigateTo('profile')">
+        <div class="user-pill" onclick="openOwnProfile()">
           <div class="up-avatar">👨‍🍳</div>
           <span id="upName">Chef</span>
           <i class="fa-solid fa-chevron-down" style="font-size:0.6rem;"></i>
@@ -394,6 +397,30 @@
             <button class="camera-btn" onclick="showToast('Camera AI scanning… 📷')">
               <i class="fa-solid fa-camera"></i> Scan with Camera
             </button>
+            <button class="btn-primary full" type="button" onclick="toggleTypedIngredientPanel()">
+              <i class="fa-solid fa-keyboard"></i> Add Ingredient by Typing
+            </button>
+            <div id="typedIngredientPanel" style="display:none; margin-top:14px;">
+              <div class="field-group" style="margin-bottom:12px;">
+                <label>Ingredient Name</label>
+                <div class="field-wrap"><i class="fa-solid fa-carrot"></i><input type="text" id="typedIngredientName"
+                    placeholder="Type any ingredient name" /></div>
+              </div>
+              <div class="field-group" style="margin-bottom:14px;">
+                <label>Category</label>
+                <select id="typedIngredientCategory" class="select-input">
+                  <option value="protein">Proteins</option>
+                  <option value="veg">Vegetables</option>
+                  <option value="dairy">Dairy</option>
+                  <option value="fruit">Fruits</option>
+                  <option value="spice">Spices</option>
+                  <option value="pantry">Pantry / Grains</option>
+                </select>
+              </div>
+              <button class="btn-secondary full" type="button" onclick="addTypedIngredientFromPanel()">
+                Save Custom Ingredient
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -610,7 +637,7 @@
           <div class="card-block">
             <h3>🏅 Leaderboard</h3>
             <ol class="leaderboard">
-              <li><span>ChefAmine</span><span>2840 pts</span></li>
+              <li><span>ChefAzizBenHaha</span><span>2840 pts</span></li>
               <li><span>KitchenQueen</span><span>2410 pts</span></li>
               <li><span>SpiceGuru</span><span>1980 pts</span></li>
             </ol>

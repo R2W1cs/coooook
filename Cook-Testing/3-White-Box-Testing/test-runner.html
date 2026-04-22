@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cook's — Unit Test Runner</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 32px;
+      min-height: 100vh;
+    }
+    header {
+      margin-bottom: 32px;
+    }
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+    .summary-bar {
+      display: flex;
+      gap: 20px;
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .summary-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .summary-stat .num {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .summary-stat .lbl {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .num-pass  { color: #4ade80; }
+    .num-fail  { color: #f87171; }
+    .num-total { color: #60a5fa; }
+    .num-suites { color: #c084fc; }
+    .progress-bar {
+      height: 6px;
+      background: #1e293b;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4ade80, #22c55e);
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+    .suite-block {
+      margin-bottom: 24px;
+    }
+    .suite-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #c084fc;
+      margin-bottom: 10px;
+      padding: 10px 16px;
+      background: #1e293b;
+      border-radius: 10px;
+      border-left: 4px solid #c084fc;
+    }
+    .test-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 0.88rem;
+    }
+    .test-pass {
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+    }
+    .test-fail {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .badge-pass { background: #166534; color: #4ade80; }
+    .badge-fail { background: #7f1d1d; color: #f87171; }
+    .test-name  { flex: 1; color: #e2e8f0; }
+    .error-msg  { font-size: 0.78rem; color: #fca5a5; margin-top: 4px; font-family: monospace; }
+    .timestamp  {
+      text-align: right;
+      font-size: 0.75rem;
+      color: #475569;
+      margin-top: 32px;
+    }
+    .btn-rerun {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 16px;
+    }
+    .btn-rerun:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🍳 Cook's — Unit Test Runner</h1>
+  <p class="subtitle">
+    White-Box unit tests for core business logic (localStorage-based functions)
+    <button class="btn-rerun" onclick="location.reload()">Re-run Tests ↺</button>
+  </p>
+</header>
+
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<div class="summary-bar" id="summaryBar">
+  <div class="summary-stat">
+    <span class="num num-total" id="statTotal">—</span>
+    <span class="lbl">Total Tests</span>
+  </div>
+  <div class="summary-stat">
+    <span class="num num-pass" id="statPass">—</span>
+    <span class="lbl">Passed</span>
+  </div>
+  <div class="summary-stat">
+    <span class="num num-fail" id="statFail">—</span>
+    <span class="lbl">Failed</span>
+  </div>
+  <div class="summary-stat">
+    <span class="num num-suites" id="statSuites">—</span>
+    <span class="lbl">Suites</span>
+  </div>
+</div>
+
+<div id="resultsContainer"></div>
+<div class="timestamp" id="timestamp"></div>
+
+<script src="unit-tests.js"></script>
+<script>
+  (function renderResults() {
+    const results  = window.TestResults || [];
+    const container = document.getElementById('resultsContainer');
+
+    let totalTests = 0, totalPass = 0, totalFail = 0, totalSuites = 0;
+    let currentSuiteEl = null;
+
+    results.forEach(entry => {
+      if (entry.type === 'suite') {
+        totalSuites++;
+        const suiteDiv = document.createElement('div');
+        suiteDiv.className = 'suite-block';
+        const suiteTitle = document.createElement('div');
+        suiteTitle.className = 'suite-title';
+        suiteTitle.textContent = '📦 ' + entry.name;
+        suiteDiv.appendChild(suiteTitle);
+        container.appendChild(suiteDiv);
+        currentSuiteEl = suiteDiv;
+        return;
+      }
+
+      if (entry.type === 'pass' || entry.type === 'fail') {
+        totalTests++;
+        if (entry.type === 'pass') totalPass++;
+        else totalFail++;
+
+        const row = document.createElement('div');
+        row.className = 'test-row ' + (entry.type === 'pass' ? 'test-pass' : 'test-fail');
+
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + (entry.type === 'pass' ? 'badge-pass' : 'badge-fail');
+        badge.textContent = entry.type === 'pass' ? 'PASS' : 'FAIL';
+
+        const nameWrap = document.createElement('div');
+        nameWrap.style.flex = '1';
+        const name = document.createElement('div');
+        name.className = 'test-name';
+        name.textContent = (entry.type === 'pass' ? '✓ ' : '✗ ') + entry.name;
+        nameWrap.appendChild(name);
+
+        if (entry.type === 'fail' && entry.message) {
+          const err = document.createElement('div');
+          err.className = 'error-msg';
+          err.textContent = '→ ' + entry.message;
+          nameWrap.appendChild(err);
+        }
+
+        row.appendChild(badge);
+        row.appendChild(nameWrap);
+
+        const target = currentSuiteEl || container;
+        target.appendChild(row);
+      }
+
+      if (entry.type === 'error') {
+        const row = document.createElement('div');
+        row.className = 'test-row test-fail';
+        row.innerHTML = `<span class="badge badge-fail">ERROR</span>
+          <div class="test-name">Suite crashed: ${entry.name}
+            <div class="error-msg">→ ${entry.message}</div>
+          </div>`;
+        const target = currentSuiteEl || container;
+        target.appendChild(row);
+      }
+    });
+
+    const pct = totalTests > 0 ? Math.round((totalPass / totalTests) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('statTotal').textContent   = totalTests;
+    document.getElementById('statPass').textContent    = totalPass;
+    document.getElementById('statFail').textContent    = totalFail;
+    document.getElementById('statSuites').textContent  = totalSuites;
+    document.getElementById('timestamp').textContent   =
+      'Run completed at ' + new Date().toLocaleTimeString() +
+      ' — ' + pct + '% pass rate';
+
+    document.title = `Cook's Tests — ${totalPass}/${totalTests} Passed`;
+  })();
+</script>
+
+</body>
+</html>
